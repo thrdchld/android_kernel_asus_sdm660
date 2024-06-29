@@ -1,27 +1,71 @@
 #!/bin/bash
+# copy right by zetaxbyte
+# you can rich me on telegram t.me/@zetaxbyte
+# flags of proton clang
 
-# Color
-green='\033[0;32m'
-echo -e "$green"
+if [ -d $(pwd)/../proton-clang ] ; then
+echo -e "\n lets's go \n"
+else
+echo -e "\n \033[91mproton-clang dir not found!!!\033[0m \n"
+sleep 2
+echo -e "\033[93m wait.. cloning proton-clang...\033[0m \n"
+sleep 2
+git clone https://github.com/kdrag0n/proton-clang.git --depth=1 $(pwd)/../proton-clang
+sleep 1
+echo
+echo -e "\n \033[92mokay cloning done...\033[0m \n"
+sleep 1
+fi
 
-# Clone depedencies
-git clone --depth=1 https://github.com/kdrag0n/proton-clang -b master ~/ether/clang
-git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 -b android-10.0.0_r39 ~/ether/gcc64
-git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9 -b android-10.0.0_r39 ~/ether/gcc32
+cyan="\033[96m"
+green="\033[92m"
+red="\033[91m"
+blue="\033[94m"
+yellow="\033[93m"
 
-# Main Environment
-export ARCH=arm64
-export SUBARCH=arm64
-export KBUILD_BUILD_USER="SonalSingh18"
-export KBUILD_BUILD_HOST="Etherious"
-export CROSS_COMPILE=/home/ubuntu/ether/gcc64/bin/aarch64-linux-android-
-export CROSS_COMPILE_ARM32=/home/ubuntu/ether/gcc32/bin/arm-linux-androideabi-
-export KBUILD_COMPILER_STRING=$(/home/ubuntu/ether/clang/bin/clang --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
+echo -e "$cyan===========================\033[0m"
+echo -e "$cyan= START COMPILING KERNEL  =\033[0m"
+echo -e "$cyan===========================\033[0m"
+
+echo -e "$blue...LOADING...\033[0m"
+
+echo -e -ne "$green## (10%\r"
+sleep 0.7
+echo -e -ne "$green#####                     (33%)\r"
+sleep 0.7
+echo -e -ne "$green#############             (66%)\r"
+sleep 0.7
+echo -e -ne "$green#######################   (100%)\r"
+echo -ne "\n"
+
+echo -e -n "$yellow\033[104mPRESS ENTER TO CONTINUE\033[0m"
+read P
+echo  $P
+
+# change DEFCONFIG to you are defconfig name or device codename
+
+DEFCONFIG="etherious_defconfig"
+
+# you can set you name or host name(optional)
+
+export KBUILD_BUILD_USER="thrdchld"
+export KBUILD_BUILD_HOST="gitpod"
+
+# do not modify TC_DIR and export PATCH it's been including with the proton-clang dir
+
+TC_DIR="$(pwd)/../proton-clang"
+
+export PATH="$TC_DIR/bin:$PATH"
 
 mkdir -p out
+make O=out ARCH=arm64 $DEFCONFIG
 
-make O=out ARCH=arm64 etherious_defconfig
+make -j$(nproc --all) O=out ARCH=arm64 CC=clang AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- 2>&1 | tee log.txt
 
-make -j$(nproc --all) O=out ARCH=arm64 \
-                        CC="/home/ubuntu/ether/clang/bin/clang" \
-                        CLANG_TRIPLE="aarch64-linux-gnu-"
+if [ -f out/arch/arm64/boot/Image ] ; then
+    echo -e "$cyan===========================\033[0m"
+    echo -e "$cyan=  SUCCESS COMPILE KERNEL =\033[0m"
+    echo -e "$cyan===========================\033[0m"
+else
+echo -e "$red!ups...something wrong!?\033[0m"
+fi
